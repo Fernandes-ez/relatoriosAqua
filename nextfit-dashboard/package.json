@@ -5,10 +5,10 @@
   "type": "module",
   "description": "Dashboard administrativo de alunos e contratos (Next Fit)",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.9"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
     "test": "node --test test/aggregate.test.js"
   }
 }

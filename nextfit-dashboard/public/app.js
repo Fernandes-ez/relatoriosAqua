@@ -16,6 +16,31 @@ const dataBr = (v) => {
 
 const estado = { base: null, grafico: null };
 
+// ---------- Tema (claro/escuro) ----------
+
+const escuro = () => document.documentElement.classList.contains('dark');
+
+// Chart.js vem de CDN: se não carregar, o painel segue sem o gráfico.
+const temChart = typeof Chart !== 'undefined';
+const corDoTexto = () => (escuro() ? '#cbd5e1' : '#475569');
+
+function aplicarTema(modo) {
+  document.documentElement.classList.toggle('dark', modo === 'escuro');
+  if (temChart) Chart.defaults.color = corDoTexto();
+  el('btn-tema').textContent = modo === 'escuro' ? '☀️' : '🌙';
+  try { localStorage.setItem('tema', modo); } catch { /* navegador sem armazenamento */ }
+  // O gráfico guarda as cores no momento da criação: recria com o tema novo.
+  if (estado.grafico) { estado.grafico.destroy(); estado.grafico = null; }
+  if (estado.base) renderTudo();
+}
+
+el('btn-tema').addEventListener('click', () => aplicarTema(escuro() ? 'claro' : 'escuro'));
+if (temChart) Chart.defaults.color = corDoTexto();
+el('btn-tema').textContent = escuro() ? '☀️' : '🌙';
+
+// Service worker só serve para o navegador oferecer "Instalar app".
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
 // ---------- Carregamento e erros ----------
 
 function mensagemDeErro(status, corpo) {
@@ -165,6 +190,7 @@ function renderResumo(lista, destino) {
 }
 
 function renderGrafico(agg) {
+  if (!temChart) return;
   const dados = {
     labels: agg.distribuicao.map((d) => d.categoria),
     datasets: [{

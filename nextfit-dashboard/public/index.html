@@ -4,6 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard Next Fit</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="/theme.css">
+  <script>
+    // Aplica o tema antes de renderizar, para não piscar. Padrão: preferência do sistema.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('tema'); } catch (e) {}
+      var escuro = t ? t === 'escuro' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (escuro) document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -15,6 +29,7 @@
         <p id="atualizado" class="text-xs text-slate-500">Carregando…</p>
       </div>
       <div class="flex gap-2">
+        <button id="btn-tema" title="Alternar modo escuro" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50">🌙</button>
         <button id="btn-atualizar" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50">Atualizar dados</button>
         <button id="btn-exportar" disabled class="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">Exportar Relatório (CSV)</button>
       </div>

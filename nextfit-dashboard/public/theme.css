@@ -1,0 +1,43 @@
+/* Modo escuro: sobrescreve as classes do Tailwind quando <html class="dark"> está ativo. */
+
+html.dark { color-scheme: dark; }
+
+html.dark .bg-slate-100 { background-color: #0b1120; }
+html.dark .bg-white { background-color: #111827; }
+html.dark .bg-slate-50 { background-color: #1e293b; }
+html.dark .bg-slate-200 { background-color: #334155; }
+html.dark .bg-red-50 { background-color: #3b1515; }
+html.dark .bg-blue-50 { background-color: #172554; }
+html.dark .bg-blue-600 { background-color: #2563eb; }
+
+html.dark .text-slate-800 { color: #e2e8f0; }
+html.dark .text-slate-700 { color: #cbd5e1; }
+html.dark .text-slate-600 { color: #94a3b8; }
+html.dark .text-slate-500 { color: #94a3b8; }
+html.dark .text-red-700 { color: #fca5a5; }
+html.dark .text-blue-700 { color: #93c5fd; }
+html.dark .text-blue-600 { color: #93c5fd; }
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 { border-color: #334155; }
+html.dark .border-red-200 { border-color: #7f1d1d; }
+html.dark .border-blue-200 { border-color: #1e40af; }
+
+html.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+
+html.dark .hover\:bg-slate-50:hover { background-color: #1e293b; }
+html.dark button.bg-white:hover { background-color: #1e293b; }
+
+/* Campos de formulário não têm classe de cor no HTML. */
+html.dark input,
+html.dark select {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  border-color: #475569;
+}
+html.dark input::placeholder { color: #64748b; }
+html.dark input[type="search"]::-webkit-search-cancel-button { filter: invert(1); }
+html.dark option { background-color: #0f172a; color: #e2e8f0; }
+
+html.dark details summary { color: #93c5fd; }

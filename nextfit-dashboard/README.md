@@ -87,3 +87,15 @@ npm test
 
 - A base inteira é carregada na memória do servidor. Para academias muito grandes, vale paginar sob demanda ou guardar o cache em disco.
 - A exportação é em CSV. XLSX pode ser adicionado com uma biblioteca como SheetJS.
+
+## Abrir como app (atalho na área de trabalho)
+
+1. Dê dois cliques em `iniciar-dashboard.bat`. Ele inicia o servidor em uma janela (que mostra erros) e abre o painel em uma janela própria, sem barra de endereço.
+2. Para criar o atalho na área de trabalho: clique com o botão direito em `iniciar-dashboard.bat` → **Enviar para** → **Área de trabalho (criar atalho)**.
+3. O token pode ficar no arquivo `.env` (ver seção de configuração). O `npm start` lê esse arquivo automaticamente.
+
+Também dá para instalar pelo navegador: no Edge ou Chrome, abra `http://localhost:3000` e use **Instalar Dashboard Next Fit** no menu de endereço. Isso cria um app com ícone próprio.
+
+**Modo escuro:** botão 🌙 no topo. A escolha fica salva no navegador. Na primeira abertura, o painel segue o tema do Windows.
+
+Requer Node.js 22.9 ou superior.
