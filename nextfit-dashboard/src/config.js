@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 const env = process.env;
 const num = (v, padrao) => (v !== undefined && v !== '' && !Number.isNaN(Number(v)) ? Number(v) : padrao);
 
@@ -22,5 +24,5 @@ export const config = {
   maxPaginas: num(env.NEXTFIT_MAX_PAGES, 500),
   timeoutMs: num(env.NEXTFIT_TIMEOUT_MS, 20000),
   cacheMs: num(env.CACHE_TTL_SECONDS, 300) * 1000,
-  arquivoGrupos: env.NEXTFIT_GRUPOS_FILE || new URL('./grupos.json', import.meta.url).pathname,
+  arquivoGrupos: env.NEXTFIT_GRUPOS_FILE || fileURLToPath(new URL('./grupos.json', import.meta.url)),
 };
