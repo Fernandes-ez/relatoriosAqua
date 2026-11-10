@@ -22,7 +22,7 @@ export const config = {
     skip: env.NEXTFIT_PARAM_SKIP || 'Skip',
     take: env.NEXTFIT_PARAM_TAKE || 'Take',
   },
-  tamanhoPagina: num(env.NEXTFIT_PAGE_SIZE, 100),
+  tamanhoPagina: num(env.NEXTFIT_PAGE_SIZE, 30), // máximo aceito pela API: 30
   maxPaginas: num(env.NEXTFIT_MAX_PAGES, 500),
   timeoutMs: num(env.NEXTFIT_TIMEOUT_MS, 20000),
   cacheMs: num(env.CACHE_TTL_SECONDS, 300) * 1000,

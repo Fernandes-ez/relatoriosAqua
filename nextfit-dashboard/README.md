@@ -42,7 +42,7 @@ Variáveis principais (todas opcionais, exceto o token):
 | `NEXTFIT_PATH_ALUNOS` | `/api/v1/Pessoa/GetClientes` | Clientes (nome e situação) |
 | `NEXTFIT_PATH_PLANOS` | `/api/v1/ContratoBase` | Catálogo de planos (nome = `descricao`) |
 | `NEXTFIT_PARAM_SKIP` / `NEXTFIT_PARAM_TAKE` | `Skip` / `Take` | Paginação da API (`temProximaPagina`) |
-| `NEXTFIT_PAGE_SIZE`, `NEXTFIT_MAX_PAGES` | 100 / 500 | Tamanho da página e limite de páginas |
+| `NEXTFIT_PAGE_SIZE`, `NEXTFIT_MAX_PAGES` | 30 / 500 | Tamanho da página (máximo da API é 30) e limite de páginas |
 | `NEXTFIT_GRUPOS_FILE` | `src/grupos.json` | Grupos personalizados (ver abaixo) |
 | `CACHE_TTL_SECONDS` | 300 | Tempo de cache da base |
 
