@@ -37,9 +37,23 @@ export function periodicidadeDe(texto) {
   return 'Outros';
 }
 
-// Regra: aquático se citar piscina/natação/hidro; caso contrário, terrestre.
+// Um plano pode ter mais de uma modalidade (ex.: "Musculação + Natação" é terrestre E aquático).
+// Terrestre: cita algo terrestre OU não cita nada aquático.
+// Aquático: cita piscina, natação, aqua ou hidro.
+const PALAVRAS_TERRESTRES = /terrestre|musc|funcional|spinning|pilates|crossfit|academia|danca|ginast|cardio|treino/;
+const PALAVRAS_AQUATICAS = /aqua|piscina|natac|hidro/;
+
+export function modalidadesDe(texto) {
+  const t = semAcento(texto);
+  const aquatico = PALAVRAS_AQUATICAS.test(t);
+  const terrestre = PALAVRAS_TERRESTRES.test(t) || !aquatico;
+  return [...(terrestre ? ['Terrestre'] : []), ...(aquatico ? ['Aquático'] : [])];
+}
+
+// Rótulo para exibição e agrupamento.
 export function modalidadeDe(texto) {
-  return /aqua|piscina|natac|hidro/.test(semAcento(texto)) ? 'Aquático' : 'Terrestre';
+  const lista = modalidadesDe(texto);
+  return lista.length === 2 ? 'Terrestre e Aquático' : lista[0];
 }
 
 // Critérios de grupo: todos os campos informados precisam casar.
@@ -93,6 +107,7 @@ export function normalizarContrato(r, grupos = [], planosPorId = new Map()) {
     id: String(r.id),
     alunoId: String(r.codigoCliente ?? r.alunoId ?? r.idAluno ?? r.aluno?.id),
     plano,
+    modalidades: modalidadesDe(`${r.modalidade ?? r.plano?.modalidade ?? ''} ${plano}`),
     modalidade: modalidadeDe(`${r.modalidade ?? r.plano?.modalidade ?? ''} ${plano}`),
     periodicidade: periodicidadeDeDuracao(r.tipoDuracao, r.tempoDuracao) ?? periodicidadeDe(textoPeriodo),
     recorrente: r.recorrente === true || /recorr/.test(semAcento(textoPeriodo)),
@@ -153,7 +168,7 @@ export function interpretarBusca(texto = '') {
 export function contratoCasa(c, filtro = {}) {
   const f = norm(filtro);
   return (
-    (!f.modalidades.length || f.modalidades.includes(c.modalidade)) &&
+    (!f.modalidades.length || f.modalidades.some((m) => c.modalidades.includes(m))) &&
     (!f.periodicidades.length || f.periodicidades.includes(c.periodicidade)) &&
     (f.recorrente === '' || c.recorrente === (f.recorrente === 'sim')) &&
     (!f.grupos.length || f.grupos.includes(c.grupo))
@@ -221,7 +236,7 @@ export function resumoPorModalidade(alunosFiltrados, filtro = {}) {
   return MODALIDADES.map((modalidade) => {
     const cs = alunosFiltrados.flatMap((a) =>
       a.contratos
-        .filter((c) => c.ativo && c.modalidade === modalidade && contratoCasa(c, f))
+        .filter((c) => c.ativo && c.modalidades.includes(modalidade) && contratoCasa(c, f))
         .map((c) => ({ alunoId: a.id, plano: c.plano })),
     );
     const planos = [...new Set(cs.map((c) => c.plano))].sort((x, y) => x.localeCompare(y, 'pt-BR'));

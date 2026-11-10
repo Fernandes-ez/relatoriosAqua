@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  periodicidadeDe, modalidadeDe, normalizarAluno, normalizarContrato, montarBase,
+  periodicidadeDe, modalidadeDe, modalidadesDe, normalizarAluno, normalizarContrato, montarBase,
   interpretarBusca, filtrarAlunos, agregar, resumir, resumoPorModalidade, SEM_CONTRATO, periodicidadeDeDuracao,
 } from '../shared/aggregate.js';
 import grupos from '../src/grupos.json' with { type: 'json' };
@@ -32,6 +32,17 @@ test('classifica periodicidade e modalidade', () => {
   assert.equal(modalidadeDe('Plano Terrestre'), 'Terrestre');
   assert.equal(modalidadeDe('Plano Básico'), 'Terrestre');
   assert.equal(modalidadeDe('Natação Mensal'), 'Aquático');
+});
+
+test('plano com duas modalidades conta nas duas', () => {
+  assert.deepEqual(modalidadesDe('Musculação + Natação'), ['Terrestre', 'Aquático']);
+  assert.deepEqual(modalidadesDe('Terrestre e Aquática'), ['Terrestre', 'Aquático']);
+  assert.deepEqual(modalidadesDe('Natação Mensal'), ['Aquático']);
+  assert.deepEqual(modalidadesDe('Plano Básico'), ['Terrestre']);
+  const c = normalizarContrato({ id: 1, codigoCliente: 9, status: 'Ativo' }, [], new Map([[1, 'Musculação + Natação']]));
+  const alunos = montarBase({ alunos: [{ id: '9', nome: 'Gil', ativo: true }], contratos: [c] });
+  assert.equal(resumoPorModalidade(alunos, {}).find((m) => m.modalidade === 'Terrestre').alunos, 1);
+  assert.equal(filtrarAlunos(alunos, { modalidades: ['Terrestre'] }).length, 1);
 });
 
 test('grupos juntam periodicidades e recorrência', () => {
