@@ -27,14 +27,18 @@ function derivarAlunos(contratosBrutos) {
 }
 
 async function gerarBase() {
-  const contratosBrutos = await buscarTodos('contratos');
-  const alunosBrutos = config.caminhos.alunos ? await buscarTodos('alunos') : derivarAlunos(contratosBrutos);
+  const [contratosBrutos, planosBrutos, alunosBrutos] = await Promise.all([
+    buscarTodos('contratos'),
+    buscarTodos('planos'),
+    buscarTodos('alunos'),
+  ]);
+  const planosPorId = new Map(planosBrutos.map((p) => [p.id, p.descricao]));
   return {
     geradoEm: new Date().toISOString(),
     grupos: grupos.map((g) => g.nome),
     alunos: montarBase({
-      alunos: alunosBrutos.map(normalizarAluno),
-      contratos: contratosBrutos.map((c) => normalizarContrato(c, grupos)),
+      alunos: (alunosBrutos.length ? alunosBrutos : derivarAlunos(contratosBrutos)).map(normalizarAluno),
+      contratos: contratosBrutos.map((c) => normalizarContrato(c, grupos, planosPorId)),
     }),
   };
 }

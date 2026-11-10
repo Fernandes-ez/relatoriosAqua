@@ -12,11 +12,11 @@ export const config = {
   // Confirmado no Swagger: chave no cabeçalho X-Api-Key, sem prefixo.
   cabecalho: env.NEXTFIT_AUTH_HEADER || 'X-Api-Key',
   esquemaAuth: env.NEXTFIT_AUTH_SCHEME ?? '',
+  // Endpoints confirmados no Swagger (https://integracao.nextfit.com.br/swagger/index.html).
   caminhos: {
-    // Vazio = alunos são derivados dos contratos (só o código do cliente).
-    // Preencha com o endpoint de clientes quando for confirmado no Swagger.
-    alunos: env.NEXTFIT_PATH_ALUNOS || '',
+    alunos: env.NEXTFIT_PATH_ALUNOS || '/api/v1/Pessoa/GetClientes',
     contratos: env.NEXTFIT_PATH_CONTRATOS || '/api/v1/ContratoCliente',
+    planos: env.NEXTFIT_PATH_PLANOS || '/api/v1/ContratoBase',
   },
   parametros: {
     skip: env.NEXTFIT_PARAM_SKIP || 'Skip',

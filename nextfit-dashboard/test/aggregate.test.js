@@ -61,6 +61,18 @@ test('formato real do ContratoCliente: periodicidade pela duração e status', (
   assert.equal(normalizarContrato({ id: 1, codigoCliente: 2, status: 'Cancelado' }).ativo, false);
 });
 
+test('cliente usa inativo e contrato usa a descrição do plano', () => {
+  assert.equal(normalizarAluno({ id: 7, nome: 'Eva', inativo: true }).ativo, false);
+  assert.equal(normalizarAluno({ id: 8, nome: 'Fabi', inativo: false }).ativo, true);
+  const planos = new Map([[1019649, 'Musculação Trimestral']]);
+  const c = normalizarContrato({ id: 1, codigoCliente: 7, codigoContratoBase: 1019649, status: 'Ativo', tipoDuracao: 'Mes', tempoDuracao: 3 }, [], planos);
+  assert.equal(c.plano, 'Musculação Trimestral');
+  assert.equal(c.modalidade, 'Terrestre');
+  assert.equal(c.periodicidade, 'Trimestral');
+  const n = normalizarContrato({ id: 2, codigoCliente: 7, codigoContratoBase: 1, status: 'Ativo' }, [], new Map([[1, 'Natação Mensal']]));
+  assert.equal(n.modalidade, 'Aquático');
+});
+
 test('aluno sem situação explícita é ativo só com contrato ativo', () => {
   const alunos = base();
   assert.equal(alunos.find((a) => a.id === '1').status, 'Ativo');

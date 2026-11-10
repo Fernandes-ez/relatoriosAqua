@@ -39,7 +39,8 @@ Variáveis principais (todas opcionais, exceto o token):
 | `NEXTFIT_BASE_URL` | `https://integracao.nextfit.com.br` | Host da API |
 | `NEXTFIT_AUTH_HEADER` / `NEXTFIT_AUTH_SCHEME` | `X-Api-Key` / (vazio) | Como o token é enviado (confirmado no Swagger) |
 | `NEXTFIT_PATH_CONTRATOS` | `/api/v1/ContratoCliente` | Endpoint de contratos (confirmado no Swagger) |
-| `NEXTFIT_PATH_ALUNOS` | (vazio) | Endpoint de clientes. Vazio = alunos derivados dos contratos, com nome "Cliente <código>" |
+| `NEXTFIT_PATH_ALUNOS` | `/api/v1/Pessoa/GetClientes` | Clientes (nome e situação) |
+| `NEXTFIT_PATH_PLANOS` | `/api/v1/ContratoBase` | Catálogo de planos (nome = `descricao`) |
 | `NEXTFIT_PARAM_SKIP` / `NEXTFIT_PARAM_TAKE` | `Skip` / `Take` | Paginação da API (`temProximaPagina`) |
 | `NEXTFIT_PAGE_SIZE`, `NEXTFIT_MAX_PAGES` | 100 / 500 | Tamanho da página e limite de páginas |
 | `NEXTFIT_GRUPOS_FILE` | `src/grupos.json` | Grupos personalizados (ver abaixo) |

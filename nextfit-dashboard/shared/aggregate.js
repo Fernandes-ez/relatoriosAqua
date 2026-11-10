@@ -58,10 +58,12 @@ export function grupoDoContrato(contrato, grupos = []) {
 
 // ---------- Normalização dos dados brutos da API ----------
 
+// PessoaView (Pessoa/GetClientes): nome e inativo (boolean).
 export function normalizarAluno(r) {
   const situacao = semAcento(r.situacao ?? r.status ?? '');
   let ativo = null;
-  if (typeof r.ativo === 'boolean') ativo = r.ativo;
+  if (typeof r.inativo === 'boolean') ativo = !r.inativo;
+  else if (typeof r.ativo === 'boolean') ativo = r.ativo;
   else if (situacao) ativo = /ativ/.test(situacao) && !/inativ/.test(situacao);
   return { id: String(r.id ?? r.codigo), nome: r.nome ?? '—', ativo };
 }
@@ -79,8 +81,11 @@ export function periodicidadeDeDuracao(tipoDuracao, tempo) {
 // Formato real do ContratoCliente: codigoCliente, status (Ativo/Bloqueado/Cancelado),
 // tipoDuracao, tempoDuracao, recorrente, modalidades (IDs), dataInicio, dataValidade.
 // Campos antigos (alunoId, plano.nome, situacao) continuam aceitos como fallback.
-export function normalizarContrato(r, grupos = []) {
-  const plano = r.plano?.nome ?? r.nomePlano ?? (typeof r.plano === 'string' ? r.plano : `Contrato base ${r.codigoContratoBase ?? '—'}`);
+// planosPorId: Map(codigoContratoBase -> descricao do plano), vindo de ContratoBase.
+export function normalizarContrato(r, grupos = [], planosPorId = new Map()) {
+  const descricaoPlano = planosPorId.get(r.codigoContratoBase);
+  const plano = r.plano?.nome ?? r.nomePlano
+    ?? (typeof r.plano === 'string' ? r.plano : descricaoPlano ?? `Contrato base ${r.codigoContratoBase ?? '—'}`);
   const duracao = r.tipoDuracao ? `${r.tempoDuracao ?? ''} ${r.tipoDuracao}` : '';
   const textoPeriodo = `${r.tipo ?? r.tipoContrato ?? ''} ${duracao} ${plano}`;
   const situacao = semAcento(r.situacao ?? r.status ?? '');
