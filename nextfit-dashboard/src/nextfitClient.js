@@ -32,7 +32,14 @@ async function chamar(caminho, query) {
   if (resp.status === 401 || resp.status === 403) {
     throw new NextFitError('Credenciais inválidas ou sem permissão no Next Fit.', resp.status, 'CREDENCIAIS');
   }
-  if (!resp.ok) throw new NextFitError(`O Next Fit respondeu com erro ${resp.status}.`, 502, 'UPSTREAM');
+  if (!resp.ok) {
+    const detalhe = (await resp.text().catch(() => '')).slice(0, 300);
+    throw new NextFitError(
+      `O Next Fit respondeu com erro ${resp.status} em ${caminho}${detalhe ? `: ${detalhe}` : ''}`,
+      502,
+      'UPSTREAM',
+    );
+  }
   try {
     return await resp.json();
   } catch {
