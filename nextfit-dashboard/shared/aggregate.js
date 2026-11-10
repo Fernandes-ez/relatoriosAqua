@@ -130,7 +130,9 @@ export function normalizarContrato(r, grupos = [], planosPorId = new Map()) {
 }
 
 // Junta alunos e contratos. Aluno sem situação explícita é ativo se tiver contrato ativo.
-export function montarBase({ alunos, contratos, grupos = [] }) {
+// Aluno ativo = tem pelo menos um contrato com status Ativo (Bloqueado, Suspenso,
+// Cancelado e Encerrado não contam). O cadastro (inativo) fica só em cadastroAtivo.
+export function montarBase({ alunos, contratos }) {
   const porAluno = new Map();
   for (const c of contratos) {
     if (!porAluno.has(c.alunoId)) porAluno.set(c.alunoId, []);
@@ -138,8 +140,8 @@ export function montarBase({ alunos, contratos, grupos = [] }) {
   }
   return alunos.map((a) => {
     const cs = porAluno.get(a.id) ?? [];
-    const ativo = a.ativo ?? cs.some((c) => c.ativo);
-    return { id: a.id, nome: a.nome, status: ativo ? 'Ativo' : 'Inativo', contratos: cs };
+    const ativo = cs.some((c) => c.ativo);
+    return { id: a.id, nome: a.nome, status: ativo ? 'Ativo' : 'Inativo', cadastroAtivo: a.ativo, contratos: cs };
   });
 }
 
