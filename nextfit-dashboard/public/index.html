@@ -67,6 +67,12 @@
         <div id="modalidades" class="grid gap-4 md:grid-cols-2"></div>
       </section>
 
+      <!-- Público -->
+      <section>
+        <h2 class="text-sm font-semibold text-slate-600 mb-2">Kids x Adulto</h2>
+        <div id="publicos" class="grid gap-4 md:grid-cols-2"></div>
+      </section>
+
       <!-- Gráfico + busca inteligente -->
       <section class="grid gap-6 lg:grid-cols-3">
         <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
@@ -121,6 +127,13 @@
                 <option value="nao">Não</option>
               </select>
             </label>
+            <label class="flex flex-col gap-1">Público
+              <select id="f-publico" class="rounded-md border border-slate-300 px-2 py-2">
+                <option value="">Todos</option>
+                <option value="Adulto">Adulto</option>
+                <option value="Kids">Kids</option>
+              </select>
+            </label>
             <label class="flex flex-col gap-1 col-span-2 md:col-span-4">Grupo personalizado
               <select id="f-grupo" class="rounded-md border border-slate-300 px-2 py-2">
                 <option value="">Todos</option>
@@ -139,6 +152,7 @@
                 <th class="px-4 py-2">Aluno</th>
                 <th class="px-4 py-2">Plano</th>
                 <th class="px-4 py-2">Modalidade</th>
+                <th class="px-4 py-2">Público</th>
                 <th class="px-4 py-2">Periodicidade</th>
                 <th class="px-4 py-2">Recorrente</th>
                 <th class="px-4 py-2">Grupo</th>

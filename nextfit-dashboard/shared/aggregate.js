@@ -4,9 +4,11 @@
 export const SEM_CONTRATO = 'Sem contrato ativo';
 export const PERIODICIDADES = ['Mensal', 'Trimestral', 'Semestral', 'Anual', 'Outros'];
 export const MODALIDADES = ['Terrestre', 'Aquático'];
+export const PUBLICOS = ['Adulto', 'Kids'];
 export const DIMENSOES = {
   periodicidade: 'Periodicidade',
   modalidade: 'Modalidade',
+  publico: 'Público (Kids/Adulto)',
   grupo: 'Grupo personalizado',
   plano: 'Plano',
 };
@@ -16,6 +18,7 @@ export const FILTROS_VAZIOS = {
   texto: '', // busca livre (nome do aluno ou do plano)
   modalidades: [], // ['Terrestre'] etc. (OU dentro do campo, E entre campos)
   periodicidades: [],
+  publicos: [], // ['Kids'] | ['Adulto']
   recorrente: '', // '' | 'sim' | 'nao'
   grupos: [],
 };
@@ -54,6 +57,12 @@ export function modalidadesDe(texto) {
 export function modalidadeDe(texto) {
   const lista = modalidadesDe(texto);
   return lista.length === 2 ? 'Terrestre e Aquático' : lista[0];
+}
+
+// Planos Kids/infantis. Independe da modalidade (ex.: "Kids Natação" é Kids e Aquático).
+const PALAVRAS_KIDS = /\bkids?\b|infantil|crianca|juvenil/;
+export function publicoDe(texto) {
+  return PALAVRAS_KIDS.test(semAcento(texto)) ? 'Kids' : 'Adulto';
 }
 
 // Critérios de grupo: todos os campos informados precisam casar.
@@ -109,6 +118,7 @@ export function normalizarContrato(r, grupos = [], planosPorId = new Map()) {
     plano,
     modalidades: modalidadesDe(`${r.modalidade ?? r.plano?.modalidade ?? ''} ${plano}`),
     modalidade: modalidadeDe(`${r.modalidade ?? r.plano?.modalidade ?? ''} ${plano}`),
+    publico: publicoDe(plano),
     periodicidade: periodicidadeDeDuracao(r.tipoDuracao, r.tempoDuracao) ?? periodicidadeDe(textoPeriodo),
     recorrente: r.recorrente === true || /recorr/.test(semAcento(textoPeriodo)),
     ativo: typeof r.ativo === 'boolean' ? r.ativo : /ativ/.test(situacao) && !/inativ/.test(situacao),
@@ -140,6 +150,7 @@ export function montarBase({ alunos, contratos, grupos = [] }) {
 const REGRAS_BUSCA = [
   { re: /\bterrestres?\b/, aplica: (f) => (f.modalidades = ['Terrestre']) },
   { re: /\b(aquaticos?|aquaticas?|piscina)\b/, aplica: (f) => (f.modalidades = ['Aquático']) },
+  { re: /\b(kids?|infantis?|criancas?)\b/, aplica: (f) => f.publicos.push('Kids') },
   { re: /\bmensal(is)?\b/, aplica: (f) => f.periodicidades.push('Mensal') },
   { re: /\btrimestr(al|ais)\b/, aplica: (f) => f.periodicidades.push('Trimestral') },
   { re: /\bsemestr(al|ais)\b/, aplica: (f) => f.periodicidades.push('Semestral') },
@@ -150,7 +161,7 @@ const REGRAS_BUSCA = [
 ];
 
 export function interpretarBusca(texto = '') {
-  const f = norm({ modalidades: [], periodicidades: [] });
+  const f = norm({ modalidades: [], periodicidades: [], publicos: [] });
   let resto = semAcento(texto);
   for (const { re, aplica } of REGRAS_BUSCA) {
     if (re.test(resto)) {
@@ -170,6 +181,7 @@ export function contratoCasa(c, filtro = {}) {
   return (
     (!f.modalidades.length || f.modalidades.some((m) => c.modalidades.includes(m))) &&
     (!f.periodicidades.length || f.periodicidades.includes(c.periodicidade)) &&
+    (!f.publicos.length || f.publicos.includes(c.publico)) &&
     (f.recorrente === '' || c.recorrente === (f.recorrente === 'sim')) &&
     (!f.grupos.length || f.grupos.includes(c.grupo))
   );
@@ -179,7 +191,8 @@ export function contratoCasa(c, filtro = {}) {
 export function filtrarAlunos(alunos, filtro = {}) {
   const f = norm(filtro);
   const texto = semAcento(f.texto).trim();
-  const temFiltroDeContrato = f.modalidades.length || f.periodicidades.length || f.recorrente !== '' || f.grupos.length;
+  const temFiltroDeContrato = f.modalidades.length || f.periodicidades.length || f.publicos.length
+    || f.recorrente !== '' || f.grupos.length;
   return alunos.filter((a) => {
     if (f.status && a.status !== f.status) return false;
     if (texto && !semAcento(a.nome).includes(texto) && !a.contratos.some((c) => semAcento(c.plano).includes(texto))) {
@@ -227,6 +240,26 @@ export function resumir(alunosFiltrados, filtro = {}) {
     tiposDeContrato: new Set(contratos.map((c) => c.periodicidade)).size,
     planosDistintos: new Set(contratos.map((c) => c.plano)).size,
   };
+}
+
+// Mesmo formato de resumoPorModalidade, para Kids x Adulto.
+export function resumoPorPublico(alunosFiltrados, filtro = {}) {
+  const f = norm(filtro);
+  return PUBLICOS.map((publico) => {
+    const cs = alunosFiltrados.flatMap((a) =>
+      a.contratos
+        .filter((c) => c.ativo && c.publico === publico && contratoCasa(c, f))
+        .map((c) => ({ alunoId: a.id, plano: c.plano })),
+    );
+    const planos = [...new Set(cs.map((c) => c.plano))].sort((x, y) => x.localeCompare(y, 'pt-BR'));
+    return {
+      publico,
+      alunos: new Set(cs.map((c) => c.alunoId)).size,
+      contratos: cs.length,
+      planosDistintos: planos.length,
+      planos,
+    };
+  });
 }
 
 // Resposta direta para perguntas como "quantos alunos em planos terrestres?".

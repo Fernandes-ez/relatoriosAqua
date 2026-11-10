@@ -1,7 +1,7 @@
 // Renderização. Toda a lógica de filtro e contagem fica em /shared/aggregate.js.
 import {
   DIMENSOES, FILTROS_VAZIOS, interpretarBusca, filtrarAlunos, contratoPrincipal,
-  agregar, resumir, resumoPorModalidade,
+  agregar, resumir, resumoPorModalidade, resumoPorPublico,
 } from '/shared/aggregate.js';
 
 const CORES = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2', '#db2777', '#64748b'];
@@ -69,12 +69,14 @@ function lerFiltros() {
   const um = (id) => (el(id).value ? [el(id).value] : []);
   const modalidades = interpretado.modalidades.length ? interpretado.modalidades : um('f-modalidade');
   const periodicidades = interpretado.periodicidades.length ? interpretado.periodicidades : um('f-periodicidade');
+  const publicos = interpretado.publicos.length ? interpretado.publicos : um('f-publico');
   return {
     ...FILTROS_VAZIOS,
     status: interpretado.status || el('f-status').value,
     texto: interpretado.texto,
     modalidades,
     periodicidades,
+    publicos,
     recorrente: interpretado.recorrente || el('f-recorrente').value,
     grupos: um('f-grupo'),
   };
@@ -84,6 +86,7 @@ function renderInterpretacao(f, interpretado) {
   const itens = [];
   if (interpretado.modalidades.length) itens.push(`Modalidade: ${interpretado.modalidades.join(', ')}`);
   if (interpretado.periodicidades.length) itens.push(`Periodicidade: ${interpretado.periodicidades.join(', ')}`);
+  if (interpretado.publicos.length) itens.push(`Público: ${interpretado.publicos.join(', ')}`);
   if (interpretado.recorrente) itens.push(`Recorrente: ${interpretado.recorrente === 'sim' ? 'sim' : 'não'}`);
   if (interpretado.status) itens.push(`Status: ${interpretado.status}`);
   if (interpretado.texto) itens.push(`Texto: "${interpretado.texto}"`);
@@ -105,7 +108,8 @@ function renderTudo() {
 
   renderInterpretacao(f, interpretado);
   renderCards(resumir(filtrados, f));
-  renderModalidades(resumoPorModalidade(filtrados, f));
+  renderResumo(resumoPorModalidade(filtrados, f), 'modalidades');
+  renderResumo(resumoPorPublico(filtrados, f), 'publicos');
   const agg = agregar(filtrados, f, el('dimensao').value);
   renderGrafico(agg);
   renderTabela(filtrados, f);
@@ -121,8 +125,9 @@ function renderCards(r) {
   el('card-planos').textContent = `${nf.format(r.planosDistintos)} planos diferentes`;
 }
 
-function renderModalidades(lista) {
-  el('modalidades').replaceChildren(...lista.map((m) => {
+// Cards de resumo para modalidade ou público (mesmo formato de dados).
+function renderResumo(lista, destino) {
+  el(destino).replaceChildren(...lista.map((m) => {
     const card = document.createElement('div');
     card.className = 'bg-white rounded-xl border border-slate-200 p-4 shadow-sm';
 
@@ -130,7 +135,7 @@ function renderModalidades(lista) {
     topo.className = 'flex items-baseline justify-between';
     const titulo = document.createElement('h3');
     titulo.className = 'font-semibold';
-    titulo.textContent = m.modalidade;
+    titulo.textContent = m.modalidade ?? m.publico;
     const numero = document.createElement('span');
     numero.className = 'text-2xl font-semibold';
     numero.textContent = `${nf.format(m.alunos)} alunos`;
@@ -217,6 +222,7 @@ function linhasDaTabela(filtrados, f) {
       nome: a.nome,
       plano: c?.plano ?? '—',
       modalidade: c?.modalidade ?? '—',
+      publico: c?.publico ?? '—',
       periodicidade: c?.periodicidade ?? '—',
       recorrente: c ? (c.recorrente ? 'Sim' : 'Não') : '—',
       grupo: c?.grupo ?? '—',
@@ -235,7 +241,7 @@ function renderTabela(filtrados, f) {
   el('tabela-corpo').replaceChildren(...visiveis.map((l) => {
     const tr = document.createElement('tr');
     tr.className = 'border-t border-slate-100 hover:bg-slate-50';
-    const valores = [l.nome, l.plano, l.modalidade, l.periodicidade, l.recorrente, l.grupo, l.status,
+    const valores = [l.nome, l.plano, l.modalidade, l.publico, l.periodicidade, l.recorrente, l.grupo, l.status,
       dataBr(l.inicio), dataBr(l.fim)];
     for (const v of valores) {
       const td = document.createElement('td');
@@ -254,9 +260,9 @@ function renderTabela(filtrados, f) {
 // ---------- Exportação ----------
 
 function exportarCsv() {
-  const cabecalho = ['Aluno', 'Plano', 'Modalidade', 'Periodicidade', 'Recorrente', 'Grupo', 'Status', 'Início', 'Fim'];
+  const cabecalho = ['Aluno', 'Plano', 'Modalidade', 'Público', 'Periodicidade', 'Recorrente', 'Grupo', 'Status', 'Início', 'Fim'];
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const corpo = linhasAtuais.map((l) => [l.nome, l.plano, l.modalidade, l.periodicidade, l.recorrente,
+  const corpo = linhasAtuais.map((l) => [l.nome, l.plano, l.modalidade, l.publico, l.periodicidade, l.recorrente,
     l.grupo, l.status, dataBr(l.inicio), dataBr(l.fim)].map(esc).join(';'));
   // BOM + ";" para o Excel em português abrir com as colunas separadas.
   const conteudo = `﻿${[cabecalho.map(esc).join(';'), ...corpo].join('\r\n')}`;
@@ -274,7 +280,7 @@ function exportarCsv() {
 // ---------- Eventos ----------
 
 el('busca').addEventListener('input', renderTudo);
-['f-status', 'f-modalidade', 'f-periodicidade', 'f-recorrente', 'f-grupo', 'dimensao']
+['f-status', 'f-modalidade', 'f-periodicidade', 'f-publico', 'f-recorrente', 'f-grupo', 'dimensao']
   .forEach((id) => el(id).addEventListener('change', renderTudo));
 el('btn-exportar').addEventListener('click', exportarCsv);
 el('btn-atualizar').addEventListener('click', () => carregar({ atualizar: true }));

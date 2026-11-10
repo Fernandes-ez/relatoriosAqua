@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  periodicidadeDe, modalidadeDe, modalidadesDe, normalizarAluno, normalizarContrato, montarBase,
+  periodicidadeDe, modalidadeDe, modalidadesDe, publicoDe, resumoPorPublico, normalizarAluno, normalizarContrato, montarBase,
   interpretarBusca, filtrarAlunos, agregar, resumir, resumoPorModalidade, SEM_CONTRATO, periodicidadeDeDuracao,
 } from '../shared/aggregate.js';
 import grupos from '../src/grupos.json' with { type: 'json' };
@@ -43,6 +43,23 @@ test('plano com duas modalidades conta nas duas', () => {
   const alunos = montarBase({ alunos: [{ id: '9', nome: 'Gil', ativo: true }], contratos: [c] });
   assert.equal(resumoPorModalidade(alunos, {}).find((m) => m.modalidade === 'Terrestre').alunos, 1);
   assert.equal(filtrarAlunos(alunos, { modalidades: ['Terrestre'] }).length, 1);
+});
+
+test('separa planos Kids dos adultos', () => {
+  assert.equal(publicoDe('Kids Musculação'), 'Kids');
+  assert.equal(publicoDe('Plano Infantil Natação'), 'Kids');
+  assert.equal(publicoDe('Musculação Mensal'), 'Adulto');
+  const alunos = montarBase({
+    alunos: [{ id: '1', nome: 'Lia', ativo: true }, { id: '2', nome: 'Rui', ativo: true }],
+    contratos: [
+      normalizarContrato({ id: 1, codigoCliente: 1, status: 'Ativo' }, [], new Map([[1, 'Kids Natação']])),
+      normalizarContrato({ id: 2, codigoCliente: 2, status: 'Ativo' }, [], new Map([[2, 'Musculação']])),
+    ],
+  });
+  const resumo = resumoPorPublico(alunos, {});
+  assert.equal(resumo.find((r) => r.publico === 'Kids').alunos, 1);
+  assert.equal(resumo.find((r) => r.publico === 'Adulto').alunos, 1);
+  assert.deepEqual(filtrarAlunos(alunos, interpretarBusca('kids')).map((a) => a.nome), ['Lia']);
 });
 
 test('grupos juntam periodicidades e recorrência', () => {
