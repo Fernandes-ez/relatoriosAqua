@@ -52,8 +52,8 @@ test('separa planos Kids dos adultos', () => {
   const alunos = montarBase({
     alunos: [{ id: '1', nome: 'Lia', ativo: true }, { id: '2', nome: 'Rui', ativo: true }],
     contratos: [
-      normalizarContrato({ id: 1, codigoCliente: 1, status: 'Ativo' }, [], new Map([[1, 'Kids Natação']])),
-      normalizarContrato({ id: 2, codigoCliente: 2, status: 'Ativo' }, [], new Map([[2, 'Musculação']])),
+      normalizarContrato({ id: 1, codigoCliente: 1, codigoContratoBase: 1, status: 'Ativo' }, [], new Map([[1, 'Kids Natação']])),
+      normalizarContrato({ id: 2, codigoCliente: 2, codigoContratoBase: 2, status: 'Ativo' }, [], new Map([[2, 'Musculação']])),
     ],
   });
   const resumo = resumoPorPublico(alunos, {});
