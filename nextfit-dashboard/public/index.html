@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Next Fit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <header class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-semibold">Alunos e contratos · Next Fit</h1>
+        <p id="atualizado" class="text-xs text-slate-500">Carregando…</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-atualizar" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50">Atualizar dados</button>
+        <button id="btn-exportar" disabled class="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50">Exportar Relatório (CSV)</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div id="erro" role="alert" class="hidden rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm"></div>
+
+    <!-- Carregamento -->
+    <section id="skeleton" class="space-y-6 animate-pulse">
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="h-24 bg-slate-200 rounded-xl"></div><div class="h-24 bg-slate-200 rounded-xl"></div>
+        <div class="h-24 bg-slate-200 rounded-xl"></div><div class="h-24 bg-slate-200 rounded-xl"></div>
+        <div class="h-24 bg-slate-200 rounded-xl"></div>
+      </div>
+      <div class="h-80 bg-slate-200 rounded-xl"></div>
+    </section>
+
+    <div id="conteudo" class="hidden space-y-6">
+      <!-- Cards de resumo -->
+      <section class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Alunos no filtro</p>
+          <p id="card-total" class="text-2xl font-semibold mt-1">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Ativos</p>
+          <p id="card-ativos" class="text-2xl font-semibold mt-1">—</p>
+          <p id="card-ativos-pct" class="text-xs text-slate-500"></p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Inativos</p>
+          <p id="card-inativos" class="text-2xl font-semibold mt-1">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Contratos ativos</p>
+          <p id="card-contratos" class="text-2xl font-semibold mt-1">—</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <p class="text-xs uppercase tracking-wide text-slate-500">Tipos de contrato</p>
+          <p id="card-tipos" class="text-2xl font-semibold mt-1">—</p>
+          <p id="card-planos" class="text-xs text-slate-500"></p>
+        </div>
+      </section>
+
+      <!-- Modalidades -->
+      <section>
+        <h2 class="text-sm font-semibold text-slate-600 mb-2">Por modalidade</h2>
+        <div id="modalidades" class="grid gap-4 md:grid-cols-2"></div>
+      </section>
+
+      <!-- Gráfico + busca inteligente -->
+      <section class="grid gap-6 lg:grid-cols-3">
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3 gap-2">
+            <h2 class="font-semibold">Distribuição</h2>
+            <select id="dimensao" class="rounded-md border border-slate-300 px-2 py-1 text-sm">
+              <option value="periodicidade">Periodicidade</option>
+              <option value="modalidade">Modalidade</option>
+              <option value="grupo">Grupo personalizado</option>
+              <option value="plano">Plano</option>
+            </select>
+          </div>
+          <div class="relative h-64"><canvas id="grafico"></canvas></div>
+          <ul id="legenda" class="mt-4 space-y-1"></ul>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm lg:col-span-2">
+          <h2 class="font-semibold mb-3">Filtros</h2>
+          <input id="busca" type="search" placeholder='Ex.: "terrestre mensal recorrente" ou nome do plano'
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <p class="mt-2 text-xs text-slate-500">
+            A busca entende modalidade, periodicidade, recorrência e status. O que sobrar é usado como texto livre.
+          </p>
+          <div id="interpretacao" class="mt-2 flex flex-wrap gap-2"></div>
+
+          <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <label class="flex flex-col gap-1">Status
+              <select id="f-status" class="rounded-md border border-slate-300 px-2 py-2">
+                <option value="">Todos</option>
+                <option value="Ativo" selected>Ativos</option>
+                <option value="Inativo">Inativos</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">Modalidade
+              <select id="f-modalidade" class="rounded-md border border-slate-300 px-2 py-2">
+                <option value="">Todas</option>
+                <option value="Terrestre">Terrestre</option>
+                <option value="Aquático">Aquático</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">Periodicidade
+              <select id="f-periodicidade" class="rounded-md border border-slate-300 px-2 py-2">
+                <option value="">Todas</option>
+                <option>Mensal</option><option>Trimestral</option><option>Semestral</option>
+                <option>Anual</option><option>Outros</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1">Recorrente
+              <select id="f-recorrente" class="rounded-md border border-slate-300 px-2 py-2">
+                <option value="">Todos</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 col-span-2 md:col-span-4">Grupo personalizado
+              <select id="f-grupo" class="rounded-md border border-slate-300 px-2 py-2">
+                <option value="">Todos</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tabela -->
+      <section class="bg-white rounded-xl border border-slate-200 shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-left text-slate-600">
+              <tr>
+                <th class="px-4 py-2">Aluno</th>
+                <th class="px-4 py-2">Plano</th>
+                <th class="px-4 py-2">Modalidade</th>
+                <th class="px-4 py-2">Periodicidade</th>
+                <th class="px-4 py-2">Recorrente</th>
+                <th class="px-4 py-2">Grupo</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2">Início</th>
+                <th class="px-4 py-2">Fim</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-corpo"></tbody>
+          </table>
+        </div>
+        <p id="vazio" class="hidden p-6 text-center text-slate-500">Nenhum aluno encontrado com esses filtros.</p>
+        <p id="contador" class="px-4 py-3 text-xs text-slate-500 border-t border-slate-200"></p>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

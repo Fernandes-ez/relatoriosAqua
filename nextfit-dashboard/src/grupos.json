@@ -1,0 +1,6 @@
+[
+  { "nome": "Recorrente", "criterios": { "recorrente": true } },
+  { "nome": "Anual", "criterios": { "periodicidade": ["Anual"] } },
+  { "nome": "Semestral e trimestral", "criterios": { "periodicidade": ["Semestral", "Trimestral"] } },
+  { "nome": "Mensal", "criterios": { "periodicidade": ["Mensal"] } }
+]

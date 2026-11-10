@@ -1,0 +1,101 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  periodicidadeDe, modalidadeDe, normalizarAluno, normalizarContrato, montarBase,
+  interpretarBusca, filtrarAlunos, agregar, resumir, resumoPorModalidade, SEM_CONTRATO,
+} from '../shared/aggregate.js';
+import grupos from '../src/grupos.json' with { type: 'json' };
+
+const base = () => {
+  const alunos = [
+    { id: '1', nome: 'Ana', situacao: 'Ativo' },
+    { id: '2', nome: 'Bruno', ativo: false },
+    { id: '3', nome: 'Caio', ativo: true },
+    { id: '4', nome: 'Dani', ativo: true },
+  ].map(normalizarAluno);
+  const contratos = [
+    { id: 'a', alunoId: '1', plano: 'Plano Terrestre Mensal Recorrente', status: 'ativo', dataInicio: '2026-01-01' },
+    { id: 'b', alunoId: '1', plano: 'Plano Anual', status: 'ativo', dataInicio: '2026-03-01' },
+    { id: 'c', alunoId: '2', plano: 'Trimestral Aquática', status: 'inativo', dataInicio: '2025-01-01' },
+    { id: 'd', alunoId: '3', plano: 'Semestral Terrestre', status: 'ativo', dataInicio: '2026-02-01' },
+    { id: 'e', alunoId: '4', plano: 'Piscina Mensal', status: 'ativo', dataInicio: '2026-02-01' },
+  ].map((r) => normalizarContrato(r, grupos));
+  return montarBase({ alunos, contratos });
+};
+
+test('classifica periodicidade e modalidade', () => {
+  assert.equal(periodicidadeDe('Plano Trimestral'), 'Trimestral');
+  assert.equal(periodicidadeDe('Semestral'), 'Semestral');
+  assert.equal(periodicidadeDe('Anual Premium'), 'Anual');
+  assert.equal(periodicidadeDe('Mensal'), 'Mensal');
+  assert.equal(periodicidadeDe('Vip'), 'Outros');
+  assert.equal(modalidadeDe('Plano Terrestre'), 'Terrestre');
+  assert.equal(modalidadeDe('Plano Básico'), 'Terrestre');
+  assert.equal(modalidadeDe('Natação Mensal'), 'Aquático');
+});
+
+test('grupos juntam periodicidades e recorrência', () => {
+  const c = normalizarContrato({ id: 'x', alunoId: '1', plano: 'Anual Recorrente' }, grupos);
+  assert.equal(c.recorrente, true);
+  assert.equal(c.grupo, 'Recorrente');
+  const m = normalizarContrato({ id: 'y', alunoId: '1', plano: 'Plano Mensal' }, grupos);
+  assert.equal(m.grupo, 'Mensal');
+  const s = normalizarContrato({ id: 'z', alunoId: '1', plano: 'Semestral' }, grupos);
+  assert.equal(s.grupo, 'Semestral e trimestral');
+});
+
+test('aluno sem situação explícita é ativo só com contrato ativo', () => {
+  const alunos = base();
+  assert.equal(alunos.find((a) => a.id === '1').status, 'Ativo');
+  assert.equal(alunos.find((a) => a.id === '2').status, 'Inativo');
+});
+
+test('busca livre interpreta modalidade, periodicidade e recorrência', () => {
+  const f = interpretarBusca('terrestre mensal recorrente premium');
+  assert.deepEqual(f.modalidades, ['Terrestre']);
+  assert.deepEqual(f.periodicidades, ['Mensal']);
+  assert.equal(f.recorrente, 'sim');
+  assert.equal(f.texto, 'premium');
+  assert.equal(interpretarBusca('inativos').status, 'Inativo');
+  assert.equal(interpretarBusca('inativos').texto, '');
+});
+
+test('conta planos terrestres e combina periodicidades', () => {
+  const alunos = base();
+  const f = { ...interpretarBusca('terrestre'), status: 'Ativo' };
+  const terr = filtrarAlunos(alunos, f);
+  const modal = resumoPorModalidade(terr, f);
+  const terrestre = modal.find((m) => m.modalidade === 'Terrestre');
+  assert.equal(terrestre.alunos, 2); // Ana (mensal) e Caio (semestral)
+  assert.equal(terrestre.planosDistintos, 3);
+
+  const longo = filtrarAlunos(alunos, { status: 'Ativo', periodicidades: ['Anual', 'Semestral'] });
+  assert.deepEqual(longo.map((a) => a.nome), ['Ana', 'Caio']);
+});
+
+test('distribuição soma 100% e usa o contrato principal', () => {
+  const alunos = base();
+  const agg = agregar(filtrarAlunos(alunos, { status: 'Ativo' }), { status: 'Ativo' }, 'periodicidade');
+  const soma = agg.distribuicao.reduce((s, d) => s + d.alunos, 0);
+  assert.equal(soma, agg.total);
+  // Ana tem Anual (mais recente) como principal, não Mensal.
+  assert.equal(agg.distribuicao.find((d) => d.categoria === 'Anual').alunos, 1);
+  assert.equal(agg.distribuicao.find((d) => d.categoria === 'Mensal').alunos, 1);
+});
+
+test('resumo de contratos e planos distintos', () => {
+  const alunos = base();
+  const f = { status: 'Ativo' };
+  const r = resumir(filtrarAlunos(alunos, f), f);
+  assert.equal(r.totalAlunos, 3);
+  assert.equal(r.alunosAtivos, 3);
+  assert.equal(r.contratosAtivos, 4);
+  assert.equal(r.percentualAtivos, 100);
+});
+
+test('agrupamento sem contrato ativo', () => {
+  const alunos = base();
+  const agg = agregar(alunos, { status: '' }, 'grupo');
+  assert.ok(agg.distribuicao.every((d) => d.categoria !== undefined));
+  assert.ok(SEM_CONTRATO);
+});
