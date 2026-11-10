@@ -37,10 +37,11 @@ Variáveis principais (todas opcionais, exceto o token):
 |---|---|---|
 | `NEXTFIT_TOKEN` | — | Token de API fornecido pela academia |
 | `NEXTFIT_BASE_URL` | `https://integracao.nextfit.com.br` | Host da API |
-| `NEXTFIT_AUTH_HEADER` / `NEXTFIT_AUTH_SCHEME` | `Authorization` / `Bearer` | Como o token é enviado |
-| `NEXTFIT_PATH_ALUNOS` / `NEXTFIT_PATH_CONTRATOS` | `/api/alunos` / `/api/contratos` | **Placeholders**: ajuste pelo Swagger |
-| `NEXTFIT_PARAM_PAGE` / `NEXTFIT_PARAM_SIZE` | `page` / `pageSize` | Nomes dos parâmetros de paginação |
-| `NEXTFIT_PAGE_SIZE`, `NEXTFIT_CONCURRENCY`, `NEXTFIT_MAX_PAGES` | 100 / 4 / 500 | Tamanho do lote, páginas em paralelo e limite |
+| `NEXTFIT_AUTH_HEADER` / `NEXTFIT_AUTH_SCHEME` | `X-Api-Key` / (vazio) | Como o token é enviado (confirmado no Swagger) |
+| `NEXTFIT_PATH_CONTRATOS` | `/api/v1/ContratoCliente` | Endpoint de contratos (confirmado no Swagger) |
+| `NEXTFIT_PATH_ALUNOS` | (vazio) | Endpoint de clientes. Vazio = alunos derivados dos contratos, com nome "Cliente <código>" |
+| `NEXTFIT_PARAM_SKIP` / `NEXTFIT_PARAM_TAKE` | `Skip` / `Take` | Paginação da API (`temProximaPagina`) |
+| `NEXTFIT_PAGE_SIZE`, `NEXTFIT_MAX_PAGES` | 100 / 500 | Tamanho da página e limite de páginas |
 | `NEXTFIT_GRUPOS_FILE` | `src/grupos.json` | Grupos personalizados (ver abaixo) |
 | `CACHE_TTL_SECONDS` | 300 | Tempo de cache da base |
 

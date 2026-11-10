@@ -9,18 +9,20 @@ export const config = {
   porta: num(env.PORT, 3000),
   baseUrl: env.NEXTFIT_BASE_URL || 'https://integracao.nextfit.com.br',
   token: env.NEXTFIT_TOKEN || '',
-  cabecalho: env.NEXTFIT_AUTH_HEADER || 'Authorization',
-  esquemaAuth: env.NEXTFIT_AUTH_SCHEME ?? 'Bearer', // '' envia o token puro
+  // Confirmado no Swagger: chave no cabeçalho X-Api-Key, sem prefixo.
+  cabecalho: env.NEXTFIT_AUTH_HEADER || 'X-Api-Key',
+  esquemaAuth: env.NEXTFIT_AUTH_SCHEME ?? '',
   caminhos: {
-    alunos: env.NEXTFIT_PATH_ALUNOS || '/api/alunos',
-    contratos: env.NEXTFIT_PATH_CONTRATOS || '/api/contratos',
+    // Vazio = alunos são derivados dos contratos (só o código do cliente).
+    // Preencha com o endpoint de clientes quando for confirmado no Swagger.
+    alunos: env.NEXTFIT_PATH_ALUNOS || '',
+    contratos: env.NEXTFIT_PATH_CONTRATOS || '/api/v1/ContratoCliente',
   },
   parametros: {
-    pagina: env.NEXTFIT_PARAM_PAGE || 'page',
-    tamanho: env.NEXTFIT_PARAM_SIZE || 'pageSize',
+    skip: env.NEXTFIT_PARAM_SKIP || 'Skip',
+    take: env.NEXTFIT_PARAM_TAKE || 'Take',
   },
   tamanhoPagina: num(env.NEXTFIT_PAGE_SIZE, 100),
-  paralelismo: num(env.NEXTFIT_CONCURRENCY, 4),
   maxPaginas: num(env.NEXTFIT_MAX_PAGES, 500),
   timeoutMs: num(env.NEXTFIT_TIMEOUT_MS, 20000),
   cacheMs: num(env.CACHE_TTL_SECONDS, 300) * 1000,

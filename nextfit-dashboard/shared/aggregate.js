@@ -66,21 +66,34 @@ export function normalizarAluno(r) {
   return { id: String(r.id ?? r.codigo), nome: r.nome ?? '—', ativo };
 }
 
+// Periodicidade pela duração do contrato (ex.: Mes/1, Mes/3, Mes/12). Null se não der para saber.
+export function periodicidadeDeDuracao(tipoDuracao, tempo) {
+  const t = semAcento(tipoDuracao);
+  const n = Number(tempo);
+  if (!t) return null;
+  if (/mes/.test(t)) return { 1: 'Mensal', 3: 'Trimestral', 6: 'Semestral', 12: 'Anual' }[n] ?? 'Outros';
+  if (/ano/.test(t)) return n === 1 ? 'Anual' : 'Outros';
+  return null;
+}
+
+// Formato real do ContratoCliente: codigoCliente, status (Ativo/Bloqueado/Cancelado),
+// tipoDuracao, tempoDuracao, recorrente, modalidades (IDs), dataInicio, dataValidade.
+// Campos antigos (alunoId, plano.nome, situacao) continuam aceitos como fallback.
 export function normalizarContrato(r, grupos = []) {
-  const plano = r.plano?.nome ?? r.nomePlano ?? (typeof r.plano === 'string' ? r.plano : '');
-  const tipo = r.tipo ?? r.tipoContrato ?? r.plano?.tipo ?? '';
-  const textoPeriodo = `${tipo} ${plano}`;
+  const plano = r.plano?.nome ?? r.nomePlano ?? (typeof r.plano === 'string' ? r.plano : `Contrato base ${r.codigoContratoBase ?? '—'}`);
+  const duracao = r.tipoDuracao ? `${r.tempoDuracao ?? ''} ${r.tipoDuracao}` : '';
+  const textoPeriodo = `${r.tipo ?? r.tipoContrato ?? ''} ${duracao} ${plano}`;
   const situacao = semAcento(r.situacao ?? r.status ?? '');
   const contrato = {
     id: String(r.id),
-    alunoId: String(r.alunoId ?? r.idAluno ?? r.aluno?.id),
+    alunoId: String(r.codigoCliente ?? r.alunoId ?? r.idAluno ?? r.aluno?.id),
     plano,
     modalidade: modalidadeDe(`${r.modalidade ?? r.plano?.modalidade ?? ''} ${plano}`),
-    periodicidade: periodicidadeDe(textoPeriodo),
+    periodicidade: periodicidadeDeDuracao(r.tipoDuracao, r.tempoDuracao) ?? periodicidadeDe(textoPeriodo),
     recorrente: r.recorrente === true || /recorr/.test(semAcento(textoPeriodo)),
     ativo: typeof r.ativo === 'boolean' ? r.ativo : /ativ/.test(situacao) && !/inativ/.test(situacao),
     inicio: r.dataInicio ?? r.inicio ?? null,
-    fim: r.dataFim ?? r.dataTermino ?? r.fim ?? null,
+    fim: r.dataEncerramento ?? r.dataValidade ?? r.dataFim ?? r.fim ?? null,
   };
   contrato.grupo = grupoDoContrato(contrato, grupos);
   return contrato;

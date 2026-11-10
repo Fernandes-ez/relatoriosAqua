@@ -40,19 +40,15 @@ async function chamar(caminho, query) {
   }
 }
 
-// Aceita array puro ou envelope { items|data|results|content, totalPages }.
+// Formato confirmado: { temProximaPagina: boolean, items: [...] }, paginado por Skip/Take.
 function lerPagina(corpo) {
-  if (Array.isArray(corpo)) return { itens: corpo, totalPaginas: null };
-  const itens = corpo.items ?? corpo.data ?? corpo.results ?? corpo.content ?? [];
-  const totalPaginas = corpo.totalPages ?? corpo.totalPaginas ?? corpo.total_pages ?? null;
-  return { itens: Array.isArray(itens) ? itens : [], totalPaginas };
+  if (Array.isArray(corpo)) return { itens: corpo, temProxima: corpo.length >= config.tamanhoPagina };
+  const itens = corpo.items ?? corpo.data ?? corpo.results ?? [];
+  return {
+    itens: Array.isArray(itens) ? itens : [],
+    temProxima: corpo.temProximaPagina === true,
+  };
 }
-
-const paginaDe = async (caminho, n) =>
-  lerPagina(await chamar(caminho, { [config.parametros.pagina]: n, [config.parametros.tamanho]: config.tamanhoPagina }));
-
-const emLotes = (lista, tamanho) =>
-  Array.from({ length: Math.ceil(lista.length / tamanho) }, (_, i) => lista.slice(i * tamanho, (i + 1) * tamanho));
 
 function deduplicar(itens) {
   const vistos = new Map();
@@ -63,29 +59,19 @@ function deduplicar(itens) {
   return [...vistos.values()];
 }
 
-// Com total de páginas conhecido, busca o restante em lotes paralelos.
-// Sem ele, avança sequencialmente enquanto a página vier cheia.
+// Avança Skip de tamanhoPagina em tamanhoPagina enquanto a API indicar próxima página.
 export async function buscarTodos(recurso) {
   const caminho = config.caminhos[recurso];
-  const primeira = await paginaDe(caminho, 1);
-  const paginas = [primeira.itens];
-
-  if (primeira.totalPaginas) {
-    const fim = Math.min(primeira.totalPaginas, config.maxPaginas);
-    const restantes = Array.from({ length: Math.max(fim - 1, 0) }, (_, i) => i + 2);
-    for (const lote of emLotes(restantes, config.paralelismo)) {
-      const respostas = await Promise.all(lote.map((n) => paginaDe(caminho, n)));
-      for (const r of respostas) paginas.push(r.itens);
-    }
-  } else {
-    let n = 2;
-    let cheia = primeira.itens.length >= config.tamanhoPagina;
-    while (cheia && n <= config.maxPaginas) {
-      const r = await paginaDe(caminho, n);
-      paginas.push(r.itens);
-      cheia = r.itens.length >= config.tamanhoPagina;
-      n++;
-    }
+  const itens = [];
+  let skip = 0;
+  for (let pagina = 0; pagina < config.maxPaginas; pagina++) {
+    const r = lerPagina(await chamar(caminho, {
+      [config.parametros.skip]: skip,
+      [config.parametros.take]: config.tamanhoPagina,
+    }));
+    itens.push(...r.itens);
+    if (!r.temProxima || r.itens.length === 0) break;
+    skip += config.tamanhoPagina;
   }
-  return deduplicar(paginas.flat());
+  return deduplicar(itens);
 }

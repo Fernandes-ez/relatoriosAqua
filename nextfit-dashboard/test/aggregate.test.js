@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   periodicidadeDe, modalidadeDe, normalizarAluno, normalizarContrato, montarBase,
-  interpretarBusca, filtrarAlunos, agregar, resumir, resumoPorModalidade, SEM_CONTRATO,
+  interpretarBusca, filtrarAlunos, agregar, resumir, resumoPorModalidade, SEM_CONTRATO, periodicidadeDeDuracao,
 } from '../shared/aggregate.js';
 import grupos from '../src/grupos.json' with { type: 'json' };
 
@@ -42,6 +42,23 @@ test('grupos juntam periodicidades e recorrência', () => {
   assert.equal(m.grupo, 'Mensal');
   const s = normalizarContrato({ id: 'z', alunoId: '1', plano: 'Semestral' }, grupos);
   assert.equal(s.grupo, 'Semestral e trimestral');
+});
+
+test('formato real do ContratoCliente: periodicidade pela duração e status', () => {
+  assert.equal(periodicidadeDeDuracao('Mes', 1), 'Mensal');
+  assert.equal(periodicidadeDeDuracao('Mes', 3), 'Trimestral');
+  assert.equal(periodicidadeDeDuracao('Mes', 12), 'Anual');
+  const c = normalizarContrato({
+    id: 74100573, codigoCliente: 40441872, codigoContratoBase: 1019649, status: 'Ativo',
+    tipoDuracao: 'Mes', tempoDuracao: 1, recorrente: true, modalidades: [{ codigoModalidade: 262136 }],
+    dataInicio: '2026-11-10T00:00:00', dataValidade: '2027-11-10T00:00:00',
+  }, grupos);
+  assert.equal(c.alunoId, '40441872');
+  assert.equal(c.ativo, true);
+  assert.equal(c.periodicidade, 'Mensal');
+  assert.equal(c.grupo, 'Recorrente');
+  assert.equal(normalizarContrato({ id: 1, codigoCliente: 2, status: 'Bloqueado' }).ativo, false);
+  assert.equal(normalizarContrato({ id: 1, codigoCliente: 2, status: 'Cancelado' }).ativo, false);
 });
 
 test('aluno sem situação explícita é ativo só com contrato ativo', () => {

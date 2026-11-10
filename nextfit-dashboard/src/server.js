@@ -20,8 +20,15 @@ const grupos = JSON.parse(await readFile(config.arquivoGrupos, 'utf8'));
 let cache = { em: 0, dados: null };
 let emVoo = null;
 
+// Sem endpoint de clientes configurado, cada código de cliente vira um aluno.
+function derivarAlunos(contratosBrutos) {
+  const ids = new Set(contratosBrutos.map((c) => c.codigoCliente).filter((v) => v != null));
+  return [...ids].map((id) => ({ id, nome: `Cliente ${id}` }));
+}
+
 async function gerarBase() {
-  const [alunosBrutos, contratosBrutos] = await Promise.all([buscarTodos('alunos'), buscarTodos('contratos')]);
+  const contratosBrutos = await buscarTodos('contratos');
+  const alunosBrutos = config.caminhos.alunos ? await buscarTodos('alunos') : derivarAlunos(contratosBrutos);
   return {
     geradoEm: new Date().toISOString(),
     grupos: grupos.map((g) => g.nome),
